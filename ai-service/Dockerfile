@@ -12,4 +12,4 @@ COPY . /app/
 
 EXPOSE 5000
 
-CMD ["sh", "-c", "python init_ai_data.py && gunicorn -b 0.0.0.0:5000 app:app"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000"]

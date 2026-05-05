@@ -105,6 +105,34 @@ def hydrate_products(product_ids):
     return [product_map[pid] for pid in product_ids if pid in product_map]
 
 
+def compose_answer_vi(query: str, products, sources):
+    q = (query or "").strip().lower()
+    if "đổi trả" in q or "doi tra" in q or "refund" in q:
+        intro = "Chính sách đổi trả: bạn có thể đổi/trả trong 14 ngày nếu sản phẩm còn nguyên trạng."
+    elif "laptop" in q or "gaming" in q:
+        intro = "Mình đã lọc nhanh các mẫu laptop/thiết bị phù hợp nhu cầu gaming trong tầm giá."
+    elif "điện thoại" in q or "dien thoai" in q or "pin" in q:
+        intro = "Mình gợi ý các mẫu điện thoại ưu tiên pin tốt và giá/hiệu năng ổn."
+    elif "phụ kiện" in q or "phu kien" in q:
+        intro = "Đây là các phụ kiện đang phù hợp và có tỷ lệ chọn mua cao."
+    else:
+        intro = "Mình đã tìm các sản phẩm phù hợp với câu hỏi của bạn."
+
+    if products:
+        top = products[:3]
+        picks = ", ".join([f"{p.get('name')} (${p.get('price')})" for p in top])
+        body = f"Gợi ý nổi bật: {picks}."
+    else:
+        body = "Hiện chưa có sản phẩm khớp rõ ràng, bạn thử thêm từ khóa thương hiệu hoặc mức giá."
+
+    if sources:
+        refs = " Tham chiếu: " + ", ".join([s.get("title", "Nguồn") for s in sources[:2]]) + "."
+    else:
+        refs = ""
+
+    return f"{intro} {body}{refs}"
+
+
 @app.route("/api/ai/recommend")
 def recommend():
     user_id = int(request.args.get("user_id", 1))
@@ -135,7 +163,7 @@ def chat():
     products = hydrate_products(product_ids)
 
     response = {
-        "answer": "Here is a quick answer with supporting references and product picks.",
+        "answer": compose_answer_vi(query, products, knowledge),
         "sources": knowledge,
         "products": products,
     }
@@ -143,6 +171,7 @@ def chat():
 
 
 @app.route("/api/ai/health")
+@app.route("/api/ai/health/")
 def health():
     return jsonify({"status": "ok"})
 
