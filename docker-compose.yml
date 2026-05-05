@@ -1,0 +1,168 @@
+services:
+  user-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: user_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+    networks:
+      - techstore-net
+
+  product-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: product_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1
+    volumes:
+      - product_db_data:/var/lib/postgresql/data
+    networks:
+      - techstore-net
+
+  cart-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: cart_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1
+    volumes:
+      - cart_db_data:/var/lib/postgresql/data
+    networks:
+      - techstore-net
+
+  order-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: order_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1
+    volumes:
+      - order_db_data:/var/lib/postgresql/data
+    networks:
+      - techstore-net
+
+  payment-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: payment_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1
+    volumes:
+      - payment_db_data:/var/lib/postgresql/data
+    networks:
+      - techstore-net
+
+  user-service:
+    build: ./user-service
+    env_file: .env
+    environment:
+      DB_NAME: user_db
+      DB_HOST: user-db
+    depends_on:
+      - user-db
+    ports:
+      - "8001:8001"
+    networks:
+      - techstore-net
+
+  product-service:
+    build: ./product-service
+    env_file: .env
+    environment:
+      DB_NAME: product_db
+      DB_HOST: product-db
+    depends_on:
+      - product-db
+    ports:
+      - "8002:8002"
+    networks:
+      - techstore-net
+
+  cart-service:
+    build: ./cart-service
+    env_file: .env
+    environment:
+      DB_NAME: cart_db
+      DB_HOST: cart-db
+      PRODUCT_SERVICE_URL: http://product-service:8002
+    depends_on:
+      - cart-db
+      - product-service
+    ports:
+      - "8003:8003"
+    networks:
+      - techstore-net
+
+  order-service:
+    build: ./order-service
+    env_file: .env
+    environment:
+      DB_NAME: order_db
+      DB_HOST: order-db
+      PRODUCT_SERVICE_URL: http://product-service:8002
+      PAYMENT_SERVICE_URL: http://payment-service:8005
+    depends_on:
+      - order-db
+      - product-service
+      - payment-service
+    ports:
+      - "8004:8004"
+    networks:
+      - techstore-net
+
+  payment-service:
+    build: ./payment-service
+    env_file: .env
+    environment:
+      DB_NAME: payment_db
+      DB_HOST: payment-db
+    depends_on:
+      - payment-db
+    ports:
+      - "8005:8005"
+    networks:
+      - techstore-net
+
+  ai-service:
+    build: ./ai-service
+    ports:
+      - "5000:5000"
+    networks:
+      - techstore-net
+
+  gateway:
+    image: nginx:alpine
+    ports:
+      - "18080:80"
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - user-service
+      - product-service
+      - cart-service
+      - order-service
+      - payment-service
+      - ai-service
+      - frontend
+    networks:
+      - techstore-net
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:80"
+    networks:
+      - techstore-net
+
+volumes:
+  user_db_data:
+  product_db_data:
+  cart_db_data:
+  order_db_data:
+  payment_db_data:
+
+networks:
+  techstore-net:
+    driver: bridge
