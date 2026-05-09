@@ -17,7 +17,7 @@ venv/
 # Django
 *.log
 staticfiles/
-media/
+media/sửa lại file report cho chuẩn mark down đi từ 2.3.2 t thấy bị lõi
 
 # Node / Frontend
 node_modules/

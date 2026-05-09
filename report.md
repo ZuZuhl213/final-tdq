@@ -239,10 +239,12 @@ class Fashion(models.Model):
     product = models.OneToOneField(Product, on_delete=models.CASCADE, primary_key=True)
     size = models.CharField(max_length=10)
     color = models.CharField(max_length=50)
+```
 
-###2.3.2 User Service
+### 2.3.2 User Service
 Kế thừa AbstractUser, thêm trường role.
 
+```python
 # user-service/users/models.py
 from django.contrib.auth.models import AbstractUser
 from django.db import models
@@ -256,8 +258,11 @@ class User(AbstractUser):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='customer')
     phone = models.CharField(max_length=20, blank=True)
     address = models.TextField(blank=True)
+```
 
-###2.3.3 Cart Service
+### 2.3.3 Cart Service
+
+```python
 # cart-service/cart/models.py
 from django.db import models
 
@@ -270,8 +275,11 @@ class CartItem(models.Model):
     product_id = models.IntegerField()
     quantity = models.PositiveIntegerField(default=1)
     added_at = models.DateTimeField(auto_now_add=True)
+```
 
-###2.3.4 Order Service
+### 2.3.4 Order Service
+
+```python
 # order-service/orders/models.py
 from django.db import models
 
@@ -294,8 +302,11 @@ class OrderItem(models.Model):
     product_name = models.CharField(max_length=255)
     unit_price = models.DecimalField(max_digits=12, decimal_places=2)
     quantity = models.PositiveIntegerField()
+```
 
-###2.3.5 Payment Service (mock)
+### 2.3.5 Payment Service (mock)
+
+```python
 # payment-service/payments/models.py
 from django.db import models
 
@@ -304,8 +315,9 @@ class Payment(models.Model):
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     status = models.CharField(max_length=20, choices=[('pending','Pending'),('success','Success'),('failed','Failed')], default='pending')
     transaction_code = models.CharField(max_length=100, blank=True)
+```
 
-##2.4 Thiết kế Database – Database‑per‑Service (PostgreSQL)
+## 2.4 Thiết kế Database – Database‑per‑Service (PostgreSQL)
 Lý do chọn PostgreSQL cho tất cả service:
 
 Hỗ trợ JSONB (có thể dùng cho sản phẩm đa dạng).
@@ -318,6 +330,7 @@ Cộng đồng mạnh, tài liệu phong phú.
 
 Chi tiết database (PostgreSQL) cho từng service:
 
+```sql
 -- user_db
 CREATE TABLE users_user (
     id SERIAL PRIMARY KEY,
@@ -397,6 +410,7 @@ CREATE TABLE payments_payment (
 );
 
 Lưu ý quan trọng: Các trường user_id, product_id, order_id là reference ID không có ràng buộc khóa ngoại ở cấp database. Tính toàn vẹn được đảm bảo ở tầng ứng dụng – đảm bảo loose coupling.
+```
 
 ## 2.5 So sánh MySQL vs PostgreSQL & lý do chọn PostgreSQL
 
@@ -467,6 +481,7 @@ graph LR
     PromptBuilder -->|prompt| Gemini
     Gemini -->|JSON| Validator
     Validator -->|filtered products| Response
+```
 
 ## 3.2 Thu thập và sinh dữ liệu
 
@@ -572,6 +587,7 @@ graph TD
     
     AIService -.->|Embedding/RAG| FAISS[(FAISS Vector Index)]
     AIService -.->|Prompt| Gemini[Google Gemini API]
+```
 
 ## 4.2 API Gateway (Nginx) – cấu hình routing
 
@@ -600,6 +616,7 @@ http {
         location /health/ { return 200 '{"status":"ok"}'; }
     }
 }
+```
 
 ## 4.3 Xác thực JWT – luồng hoạt động
 
@@ -630,8 +647,9 @@ def create_order(request):
     except requests.exceptions.Timeout:
         order.status = 'pending_payment'
         order.save()
+```
 
-# 4.5 Docker hóa từng service (Dockerfile) & docker-compose.yml
+## 4.5 Docker hóa từng service (Dockerfile) & docker-compose.yml
 
 **Dockerfile mẫu cho Django service (user-service):**
 
@@ -646,17 +664,18 @@ CMD ["sh", "-c", "python manage.py migrate && guincorn config.wsgi:application -
 
 ### Dockerfile cho AI Service (FastAPI):
 
-dockerfile
-
+```dockerfile
 FROM python:3.11-slim
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "5000"]
+```
 
-# 4.6 Luồng End‑to‑End: Mua hàng (sequence logic)
+## 4.6 Luồng End‑to‑End: Mua hàng (sequence logic)
 
+```mermaid
 sequenceDiagram
     actor User
     participant FrontEnd as Frontend
@@ -682,8 +701,9 @@ sequenceDiagram
     OrderSvc-->>Gateway: Trả về Order ID
     Gateway-->>FrontEnd: HTTP 201 Created
     FrontEnd-->>User: Hiển thị thành công
+```
 
-4.7 Đánh giá hệ thống
+## 4.7 Đánh giá hệ thống
 Ưu điểm:
 
 Loose coupling tương đối tốt, mỗi service nghiệp vụ có database PostgreSQL riêng.
@@ -718,7 +738,7 @@ Có thể thay Gemini bằng LLM local (vLLM/Ollama) trong `ai-service` mà khô
 
 Có thể bổ sung Redis để cache/queue/rate-limit mà không phá vỡ kiến trúc hiện tại.
 
-4.8 Bài tập thực hành + Checklist
+## 4.8 Bài tập thực hành + Checklist
 Bài tập thực hành:
 
 Chạy `docker compose up --build`, kiểm tra gateway tại `http://localhost:18080/` và health endpoint `http://localhost:18080/api/health/`.
