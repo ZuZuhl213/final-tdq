@@ -15,7 +15,7 @@ class GeminiClient:
         if not api_key:
             raise RuntimeError("Missing GEMINI_API_KEY")
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel("gemini-1.5-flash")
+        self.model = genai.GenerativeModel("gemini-1.0-pro")
 
     def chat_with_rag(self, query: str, products: list[dict], policy: str) -> ChatResponse:
         compact_products = [

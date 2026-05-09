@@ -42,6 +42,16 @@ export default function ChatbotWidget() {
         ...prev,
         { role: "bot", text: response.answer, payload: response }
       ]);
+    } catch (error) {
+      console.error("Chat request failed:", error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "bot",
+          text: "AI tam thoi chua tra loi duoc. Vui long thu lai sau it phut."
+        }
+      ]);
+      toast("AI service dang loi hoac chua san sang", "error");
     } finally {
       setLoading(false);
     }
