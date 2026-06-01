@@ -21,6 +21,7 @@ export default function HomePage() {
     queryFn: () => listProducts({}),
     staleTime: 60000
   });
+  const productList = Array.isArray(products) ? products : products?.results || [];
 
   return (
     <div className="space-y-12">
@@ -103,7 +104,7 @@ export default function HomePage() {
         <h2 className="text-3xl font-semibold mb-4">New arrivals</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {productsLoading && Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-40" />)}
-          {products?.results?.slice(0, 4).map((product: Product) => (
+          {productList.slice(0, 4).map((product: Product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>

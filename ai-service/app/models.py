@@ -20,8 +20,8 @@ class RecommendItem(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    query: str = Field(min_length=1)
-    user_id: int | None = 1
+    query: str = Field(min_length=1, max_length=500, description="User query for AI assistant")
+    user_id: int | None = Field(default=1, ge=1, description="User ID (optional)")
 
 
 class SuggestedProduct(BaseModel):
@@ -31,5 +31,5 @@ class SuggestedProduct(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    answer: str
-    suggested_products: list[SuggestedProduct]
+    answer: str = Field(min_length=1, description="Natural language answer from AI")
+    suggested_products: list[SuggestedProduct] = Field(default_factory=list, description="Recommended products")

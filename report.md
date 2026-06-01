@@ -766,3 +766,438 @@ AI Service trả về chat/recommendation hợp lý, có fallback khi cần.
 Frontend gọi được API qua gateway và hiển thị dữ liệu.
 
 Redis chưa được triển khai trong cấu hình hiện tại (chưa có Redis service trong `docker-compose.yml`).
+
+---
+
+# APPENDIX: SEQUENCE DIAGRAMS CHO MỖI MODULE
+
+## A.1 API Gateway (Nginx) - Routing & Load Balancing
+
+```mermaid
+sequenceDiagram
+    participant Client as Client/Frontend
+    participant Gateway as API Gateway (Nginx)<br/>Port 18080
+    participant Services as 6 Microservices
+    
+    Client->>Gateway: HTTP Request<br/>/api/users/, /api/products/,<br/>/api/cart/, /api/orders/, etc.
+    activate Gateway
+    
+    Note over Gateway: Parse URL path<br/>Route to appropriate<br/>upstream server
+    
+    alt /api/users/ hoặc /api/auth/
+        Gateway->>Services: Forward to user-service:8000
+    else /api/products/ hoặc /api/categories/
+        Gateway->>Services: Forward to product-service:8000
+    else /api/cart/
+        Gateway->>Services: Forward to cart-service:8000
+    else /api/orders/
+        Gateway->>Services: Forward to order-service:8000
+    else /api/payments/
+        Gateway->>Services: Forward to payment-service:8000
+    else /api/ai/
+        Gateway->>Services: Forward to ai-service:5000
+    end
+    
+    Services-->>Gateway: Response (JSON)
+    deactivate Gateway
+    Gateway-->>Client: HTTP Response
+```
+
+## A.2 User Service - Authentication & Authorization Flow
+
+```mermaid
+sequenceDiagram
+    participant Client as Client/Frontend
+    participant Gateway as API Gateway
+    participant UserSvc as User Service<br/>(Django)
+    participant UserDB as User DB<br/>(PostgreSQL)
+    
+    Client->>Gateway: POST /api/auth/register/
+    Gateway->>UserSvc: Register Request
+    activate UserSvc
+    
+    UserSvc->>UserDB: INSERT users_user
+    UserDB-->>UserSvc: user_id created
+    
+    UserSvc-->>Gateway: HTTP 201 Created
+    deactivate UserSvc
+    Gateway-->>Client: {"user_id": 1, "username": "..."}
+    
+    Note over Client: User lưu credentials
+    
+    Client->>Gateway: POST /api/auth/login/<br/>{"username": "...", "password": "..."}
+    Gateway->>UserSvc: Login Request
+    activate UserSvc
+    
+    UserSvc->>UserDB: SELECT user WHERE username=...
+    UserDB-->>UserSvc: user record
+    
+    Note over UserSvc: Verify password<br/>Generate JWT token
+    
+    UserSvc-->>Gateway: HTTP 200 OK
+    deactivate UserSvc
+    Gateway-->>Client: {"access_token": "...", "refresh_token": "..."}
+    
+    Client->>Client: Store token in localStorage
+    
+    Client->>Gateway: GET /api/users/me/<br/>Header: Authorization: Bearer {token}
+    Gateway->>UserSvc: Verify JWT token
+    activate UserSvc
+    
+    Note over UserSvc: Decode JWT using shared key<br/>Check expiration & signature
+    
+    UserSvc->>UserDB: SELECT user WHERE id=...
+    UserDB-->>UserSvc: user profile
+    
+    UserSvc-->>Gateway: HTTP 200 OK
+    deactivate UserSvc
+    Gateway-->>Client: {"id": 1, "username": "...", "role": "customer"}
+```
+
+## A.3 Product Service - Product Catalog Management
+
+```mermaid
+sequenceDiagram
+    participant Client as Client/Frontend
+    participant Gateway as API Gateway
+    participant ProductSvc as Product Service<br/>(Django)
+    participant ProductDB as Product DB<br/>(PostgreSQL)
+    
+    Client->>Gateway: GET /api/products/?category=Book&limit=20
+    Gateway->>ProductSvc: Query Products
+    activate ProductSvc
+    
+    ProductSvc->>ProductDB: SELECT products WHERE category='Book'<br/>LIMIT 20
+    ProductDB-->>ProductSvc: [Product list]
+    
+    Note over ProductSvc: Serialize products to JSON<br/>Include OneToOne fields (author, brand, etc)
+    
+    ProductSvc-->>Gateway: HTTP 200 OK
+    deactivate ProductSvc
+    Gateway-->>Client: [{"id": 1, "name": "...", "price": 99.99, "author": "..."}]
+    
+    Client->>Gateway: GET /api/products/1/
+    Gateway->>ProductSvc: Get Product Detail
+    activate ProductSvc
+    
+    ProductSvc->>ProductDB: SELECT * FROM products WHERE id=1<br/>LEFT JOIN products_book ON...
+    ProductDB-->>ProductSvc: Full product with sub-type
+    
+    ProductSvc-->>Gateway: HTTP 200 OK
+    deactivate ProductSvc
+    Gateway-->>Client: {"id": 1, "name": "...", "type": "Book", "author": "...", "isbn": "..."}
+    
+    Client->>Gateway: POST /api/products/<br/>(Admin only)
+    Gateway->>ProductSvc: Create New Product
+    activate ProductSvc
+    
+    Note over ProductSvc: Verify JWT role=admin
+    
+    ProductSvc->>ProductDB: INSERT products_product + products_book
+    ProductDB-->>ProductSvc: product created
+    
+    ProductSvc-->>Gateway: HTTP 201 Created
+    deactivate ProductSvc
+    Gateway-->>Client: {"id": 51, "name": "...", "created_at": "..."}
+```
+
+## A.4 Cart Service - Shopping Cart Operations
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant Frontend as Frontend/React
+    participant Gateway as API Gateway
+    participant CartSvc as Cart Service<br/>(Django)
+    participant CartDB as Cart DB<br/>(PostgreSQL)
+    
+    User->>Frontend: Bấm "Add to Cart"
+    Frontend->>Gateway: POST /api/cart/items/<br/>{"product_id": 5, "quantity": 2}
+    
+    activate CartSvc
+    Gateway->>CartSvc: Add Item to Cart
+    
+    CartSvc->>CartDB: SELECT cart WHERE user_id={from_jwt}
+    CartDB-->>CartSvc: cart record OR NULL
+    
+    alt Cart không tồn tại
+        CartSvc->>CartDB: INSERT cart (user_id=...)
+        CartDB-->>CartSvc: cart_id created
+    end
+    
+    CartSvc->>CartDB: INSERT cart_item (cart_id, product_id, quantity)
+    CartDB-->>CartSvc: cart_item created
+    
+    CartSvc-->>Gateway: HTTP 201 Created
+    deactivate CartSvc
+    Gateway-->>Frontend: {"item_id": 10, "product_id": 5, "quantity": 2}
+    Frontend-->>User: Hiển thị "Added to cart"
+    
+    User->>Frontend: Bấm "View Cart"
+    Frontend->>Gateway: GET /api/cart/
+    
+    activate CartSvc
+    Gateway->>CartSvc: Get Cart Items
+    
+    CartSvc->>CartDB: SELECT cart WHERE user_id=...<br/>Then SELECT * FROM cart_items
+    CartDB-->>CartSvc: [item1, item2, ...]
+    
+    CartSvc-->>Gateway: HTTP 200 OK
+    deactivate CartSvc
+    Gateway-->>Frontend: [{"item_id": 10, "product_id": 5, "quantity": 2}, ...]
+    Frontend-->>User: Hiển thị danh sách items
+    
+    User->>Frontend: Bấm "Remove from Cart"
+    Frontend->>Gateway: DELETE /api/cart/items/10/
+    
+    activate CartSvc
+    Gateway->>CartSvc: Remove Cart Item
+    
+    CartSvc->>CartDB: DELETE FROM cart_items WHERE id=10
+    CartDB-->>CartSvc: Confirmed
+    
+    CartSvc-->>Gateway: HTTP 204 No Content
+    deactivate CartSvc
+    Gateway-->>Frontend: (Empty response)
+    Frontend-->>User: Item removed
+```
+
+## A.5 Order Service - Order Processing & Workflow
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant Frontend as Frontend
+    participant Gateway as API Gateway
+    participant OrderSvc as Order Service<br/>(Django)
+    participant CartSvc as Cart Service
+    participant PaymentSvc as Payment Service
+    participant OrderDB as Order DB
+    
+    User->>Frontend: Bấm "Checkout"
+    Frontend->>Gateway: POST /api/orders/<br/>{"shipping_address": "..."}
+    
+    activate OrderSvc
+    Gateway->>OrderSvc: Create Order
+    
+    Note over OrderSvc: Verify JWT token<br/>Extract user_id
+    
+    OrderSvc->>CartSvc: GET /api/cart/
+    activate CartSvc
+    CartSvc-->>OrderSvc: [items]
+    deactivate CartSvc
+    
+    Note over OrderSvc: Calculate total_amount<br/>from cart items
+    
+    OrderSvc->>PaymentSvc: POST /api/payments/<br/>{"order_id": "temp", "amount": 500}
+    activate PaymentSvc
+    PaymentSvc-->>OrderSvc: {"status": "success", "transaction_code": "TXN123"}
+    deactivate PaymentSvc
+    
+    OrderSvc->>OrderDB: INSERT orders_order (status='paid')
+    OrderDB-->>OrderSvc: order_id = 42 created
+    
+    OrderSvc->>OrderDB: INSERT orders_orderitem (multiple rows)
+    OrderDB-->>OrderSvc: items inserted
+    
+    Note over OrderSvc: Send notification email (mock)
+    
+    OrderSvc-->>Gateway: HTTP 201 Created
+    deactivate OrderSvc
+    Gateway-->>Frontend: {"order_id": 42, "status": "paid", "total": 500}
+    Frontend-->>User: Hiển thị Order Success
+    
+    User->>Frontend: Kiểm tra "Order History"
+    Frontend->>Gateway: GET /api/orders/
+    
+    activate OrderSvc
+    Gateway->>OrderSvc: List Orders
+    
+    OrderSvc->>OrderDB: SELECT * FROM orders WHERE user_id=...
+    OrderDB-->>OrderSvc: [order1, order2, ...]
+    
+    OrderSvc-->>Gateway: HTTP 200 OK
+    deactivate OrderSvc
+    Gateway-->>Frontend: [{"order_id": 42, "status": "paid", "created_at": "..."}, ...]
+    Frontend-->>User: Hiển thị danh sách orders
+```
+
+## A.6 Payment Service - Payment Processing (Mock)
+
+```mermaid
+sequenceDiagram
+    participant OrderSvc as Order Service
+    participant Gateway as API Gateway
+    participant PaymentSvc as Payment Service<br/>(Django)
+    participant PaymentDB as Payment DB<br/>(PostgreSQL)
+    
+    OrderSvc->>Gateway: POST /api/payments/
+    Gateway->>PaymentSvc: Create Payment
+    activate PaymentSvc
+    
+    Note over PaymentSvc: Validate amount > 0<br/>Generate transaction_code
+    
+    PaymentSvc->>PaymentDB: INSERT payments_payment<br/>(order_id, amount, status='pending')
+    PaymentDB-->>PaymentSvc: payment created
+    
+    Note over PaymentSvc: Mock payment processor<br/>Luôn return success<br/>(có thể add logic thực từ Stripe/PayPal sau)
+    
+    PaymentSvc->>PaymentDB: UPDATE payments_payment<br/>SET status='success',<br/>transaction_code='...'
+    PaymentDB-->>PaymentSvc: Confirmed
+    
+    PaymentSvc-->>Gateway: HTTP 200 OK
+    deactivate PaymentSvc
+    Gateway-->>OrderSvc: {"status": "success", "transaction_code": "..."}
+    
+    OrderSvc->>OrderSvc: Update order status to 'paid'
+    
+    Note over PaymentSvc: Có thể add webhook callback sau:<br/>payment-service POST callback to order-service<br/>khi payment xử lý async
+```
+
+## A.7 AI Service - Recommendation & Chatbot
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant Frontend as Frontend
+    participant Gateway as API Gateway
+    participant AISvc as AI Service<br/>(FastAPI)
+    participant FAISS as FAISS Index<br/>(Memory)
+    participant Gemini as Gemini API<br/>(Google)
+    
+    User->>Frontend: Đặt câu hỏi: "Laptop gaming dưới 15M"
+    Frontend->>Gateway: POST /api/ai/chat/<br/>{"query": "...", "user_id": 1}
+    
+    activate AISvc
+    Gateway->>AISvc: Chat Request
+    
+    Note over AISvc: Step 1: Embed query<br/>using all-MiniLM-L6-v2
+    
+    AISvc->>FAISS: query_vector = embed(query)
+    FAISS-->>AISvc: embedding [384-dim vector]
+    
+    Note over AISvc: Step 2: Retrieve top-5<br/>sản phẩm từ FAISS
+    
+    AISvc->>FAISS: search(query_vector, k=5)
+    FAISS-->>AISvc: [product_id=1, product_id=3, ...]
+    
+    Note over AISvc: Step 3: Build prompt<br/>với product context + policy
+    
+    AISvc->>AISvc: prompt = build_prompt(top_products, policy, query)
+    
+    Note over AISvc: Step 4: Call Gemini API<br/>with timeout=10s, retry=2
+    
+    AISvc->>Gemini: POST /generateContent<br/>model=gemini-1.5-flash<br/>prompt=...
+    activate Gemini
+    Gemini-->>AISvc: {"content": "{\"answer\": \"...\", \"suggested_products\": [...]}"}
+    deactivate Gemini
+    
+    Note over AISvc: Step 5: Parse & Validate JSON<br/>Filter out-of-stock products
+    
+    AISvc->>AISvc: json_resp = parse_json(response)<br/>Validate product IDs exist<br/>Filter stock > 0
+    
+    alt JSON invalid hoặc Gemini error
+        Note over AISvc: Fallback: Return template answer<br/>+ popular products
+        AISvc-->>Gateway: {"answer": "Tôi gợi ý những sản phẩm phổ biến...", "suggested_products": [...]}
+    else JSON valid & products found
+        AISvc-->>Gateway: HTTP 200 OK<br/>{"answer": "...", "suggested_products": [...]}
+    end
+    
+    deactivate AISvc
+    Gateway-->>Frontend: Chat response
+    Frontend-->>User: Hiển thị AI recommendation
+    
+    User->>Frontend: Bấm "Get Recommendation"
+    Frontend->>Gateway: GET /api/ai/recommend?user_id=1&limit=5
+    
+    activate AISvc
+    Gateway->>AISvc: Recommendation Request
+    
+    Note over AISvc: Content-based hoặc<br/>Popularity-based scoring
+    
+    AISvc->>AISvc: score = 0.6*popularity + 0.4*co_occurrence
+    
+    AISvc-->>Gateway: HTTP 200 OK
+    deactivate AISvc
+    Gateway-->>Frontend: [{"id": 1, "name": "...", "score": 0.85}]
+    Frontend-->>User: Hiển thị list recommend
+```
+
+## A.8 Frontend (React/Vite) - User Interface Flow
+
+```mermaid
+sequenceDiagram
+    participant Browser as Browser/User
+    participant Frontend as React/Vite<br/>App (localhost:5173)
+    participant Gateway as API Gateway<br/>Nginx (localhost:18080)
+    
+    Browser->>Frontend: Load page /
+    activate Frontend
+    
+    Note over Frontend: webpack-dev-server compile<br/>React components
+    
+    Frontend->>Frontend: Check localStorage<br/>for access_token
+    
+    alt Token found
+        Note over Frontend: Token exists
+    else Token not found
+        Frontend-->>Browser: Redirect /login
+    end
+    
+    deactivate Frontend
+    
+    Browser->>Frontend: Navigate /products
+    activate Frontend
+    Frontend->>Gateway: GET /api/products/?limit=20
+    Gateway-->>Frontend: Product list JSON
+    Frontend->>Frontend: Render product cards
+    Frontend-->>Browser: Display products
+    deactivate Frontend
+    
+    Browser->>Frontend: Click product detail
+    Frontend->>Gateway: GET /api/products/1/
+    Gateway-->>Frontend: Product detail JSON
+    Frontend-->>Browser: Show detail page
+    
+    Browser->>Frontend: Click "Add to Cart"
+    Frontend->>Frontend: Update state (local cart)
+    Frontend->>Gateway: POST /api/cart/items/
+    Gateway-->>Frontend: Success
+    Frontend-->>Browser: Toast: "Added!"
+    
+    Browser->>Frontend: Click "Checkout"
+    Frontend->>Frontend: Validate cart
+    Frontend->>Gateway: POST /api/orders/
+    Gateway-->>Frontend: Order created
+    Frontend-->>Browser: Redirect /order-success/42
+    
+    Browser->>Frontend: Click "Orders"
+    Frontend->>Gateway: GET /api/orders/
+    Gateway-->>Frontend: Orders list
+    Frontend-->>Browser: Show orders table
+    
+    Browser->>Frontend: Ask AI Chatbot
+    Frontend->>Gateway: POST /api/ai/chat/
+    activate Gateway
+    Gateway->>Gateway: Forward to ai-service
+    Gateway-->>Frontend: Chat response (with recommendations)
+    deactivate Gateway
+    Frontend-->>Browser: Display AI response in chat
+```
+
+---
+
+## A.9 Tóm tắt Module Interactions
+
+| Module | Framework | Port | Database | Chức năng chính |
+|:---|:---|:---|:---|:---|
+| **Frontend** | React/Vite | 5173 | – | UI, gọi API qua Gateway |
+| **Gateway** | Nginx | 18080 | – | Routing, load balancing, CORS |
+| **User Service** | Django | 8000 | PostgreSQL | Auth, JWT, user management |
+| **Product Service** | Django | 8000 | PostgreSQL | Catalog, categories, filters |
+| **Cart Service** | Django | 8000 | PostgreSQL | Shopping cart, items |
+| **Order Service** | Django | 8000 | PostgreSQL | Orders, checkout, gọi payment |
+| **Payment Service** | Django | 8000 | PostgreSQL | Payment mock, transaction |
+| **AI Service** | FastAPI | 5000 | – | RAG, Gemini, recommendation, chatbot |
+
+---

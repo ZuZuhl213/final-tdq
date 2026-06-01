@@ -4,9 +4,7 @@ import json
 import logging
 from pathlib import Path
 
-import faiss
 import numpy as np
-from sentence_transformers import SentenceTransformer
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 PRODUCTS_FILE = DATA_DIR / "products.json"
@@ -27,6 +25,10 @@ class RagRetriever:
         if self.index_loaded and self.embedder is not None and self.index is not None:
             return True
         try:
+            import faiss
+            from sentence_transformers import SentenceTransformer
+
+            logger.info("Building FAISS index from %d products...", len(self.products))
             self.embedder = SentenceTransformer("all-MiniLM-L6-v2")
             texts = [f"{p['name']}. {p['description']}" for p in self.products]
             vectors = self.embedder.encode(texts, normalize_embeddings=True)
@@ -34,9 +36,11 @@ class RagRetriever:
             self.index = faiss.IndexFlatIP(self.matrix.shape[1])
             self.index.add(self.matrix)
             self.index_loaded = True
+            logger.info("FAISS index built successfully: %d vectors, %d dimensions", 
+                       len(self.products), self.matrix.shape[1])
             return True
         except Exception as exc:
-            logger.error("Embedding index load failed, fallback retrieval enabled: %s", exc)
+            logger.error("Embedding index build failed, fallback retrieval enabled: %s", exc)
             self.index_loaded = False
             return False
 

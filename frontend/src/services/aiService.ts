@@ -1,5 +1,10 @@
 import client from "@/api/client";
-import { RecommendationResponse, ChatRequest, ChatResponse, Product } from "@/types/models";
+import { ChatRequest, ChatResponse, Product } from "@/types/models";
+
+const extractProducts = (data: { products?: Product[]; items?: Product[] } | Product[]): Product[] => {
+  if (Array.isArray(data)) return data;
+  return data.products || data.items || [];
+};
 
 const aiService = {
   recommend: async (userId?: number, limit: number = 5): Promise<Product[]> => {
@@ -9,7 +14,7 @@ const aiService = {
 
     try {
       const response = await client.get(`/api/ai/recommend/?${params.toString()}`);
-      return response.data.products || response.data;
+      return extractProducts(response.data);
     } catch (error) {
       console.error("Error fetching recommendations:", error);
       return [];
@@ -18,7 +23,10 @@ const aiService = {
 
   chat: async (data: ChatRequest): Promise<ChatResponse> => {
     const response = await client.post("/api/ai/chat/", data);
-    return response.data;
+    return {
+      ...response.data,
+      products: response.data.products || response.data.suggested_products || [],
+    };
   },
 
   health: async (): Promise<{ status: string }> => {
@@ -32,7 +40,7 @@ const aiService = {
     params.append("limit", String(limit));
     try {
       const response = await client.get(`/api/ai/recommend/?${params.toString()}`);
-      return response.data.products || response.data;
+      return extractProducts(response.data);
     } catch (error) {
       console.error("Error fetching recommendations:", error);
       return [];

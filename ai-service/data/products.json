@@ -1,0 +1,502 @@
+[
+  {
+    "id": 1,
+    "name": "HP Laptop 1",
+    "description": "HP Laptop 1 phù hợp cho nhu cầu laptop, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "HP",
+    "category": "laptop",
+    "price": 20446905.0,
+    "stock": 7,
+    "image_url": "https://picsum.photos/id/1/300/300"
+  },
+  {
+    "id": 2,
+    "name": "Asus Monitor 2",
+    "description": "Asus Monitor 2 phù hợp cho nhu cầu monitor, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Asus",
+    "category": "monitor",
+    "price": 8868334.0,
+    "stock": 21,
+    "image_url": "https://picsum.photos/id/2/300/300"
+  },
+  {
+    "id": 3,
+    "name": "Logitech Phone 3",
+    "description": "Logitech Phone 3 phù hợp cho nhu cầu phone, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Logitech",
+    "category": "phone",
+    "price": 30304694.0,
+    "stock": 1,
+    "image_url": "https://picsum.photos/id/3/300/300"
+  },
+  {
+    "id": 4,
+    "name": "Dell Phone 4",
+    "description": "Dell Phone 4 phù hợp cho nhu cầu phone, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Dell",
+    "category": "phone",
+    "price": 16662546.0,
+    "stock": 7,
+    "image_url": "https://picsum.photos/id/4/300/300"
+  },
+  {
+    "id": 5,
+    "name": "Logitech Laptop 5",
+    "description": "Logitech Laptop 5 phù hợp cho nhu cầu laptop, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Logitech",
+    "category": "laptop",
+    "price": 39654518.0,
+    "stock": 6,
+    "image_url": "https://picsum.photos/id/5/300/300"
+  },
+  {
+    "id": 6,
+    "name": "Logitech Tablet 6",
+    "description": "Logitech Tablet 6 phù hợp cho nhu cầu tablet, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Logitech",
+    "category": "tablet",
+    "price": 16783519.0,
+    "stock": 14,
+    "image_url": "https://picsum.photos/id/6/300/300"
+  },
+  {
+    "id": 7,
+    "name": "Sony Mouse 7",
+    "description": "Sony Mouse 7 phù hợp cho nhu cầu mouse, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Sony",
+    "category": "mouse",
+    "price": 2426124.0,
+    "stock": 24,
+    "image_url": "https://picsum.photos/id/7/300/300"
+  },
+  {
+    "id": 8,
+    "name": "Lenovo Tablet 8",
+    "description": "Lenovo Tablet 8 phù hợp cho nhu cầu tablet, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Lenovo",
+    "category": "tablet",
+    "price": 24823825.0,
+    "stock": 8,
+    "image_url": "https://picsum.photos/id/8/300/300"
+  },
+  {
+    "id": 9,
+    "name": "Lenovo Keyboard 9",
+    "description": "Lenovo Keyboard 9 phù hợp cho nhu cầu keyboard, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Lenovo",
+    "category": "keyboard",
+    "price": 24578477.0,
+    "stock": 3,
+    "image_url": "https://picsum.photos/id/9/300/300"
+  },
+  {
+    "id": 10,
+    "name": "HP Tablet 10",
+    "description": "HP Tablet 10 phù hợp cho nhu cầu tablet, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "HP",
+    "category": "tablet",
+    "price": 8480526.0,
+    "stock": 11,
+    "image_url": "https://picsum.photos/id/10/300/300"
+  },
+  {
+    "id": 11,
+    "name": "MSI Mouse 11",
+    "description": "MSI Mouse 11 phù hợp cho nhu cầu mouse, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "MSI",
+    "category": "mouse",
+    "price": 4905909.0,
+    "stock": 23,
+    "image_url": "https://picsum.photos/id/11/300/300"
+  },
+  {
+    "id": 12,
+    "name": "Samsung Phone 12",
+    "description": "Samsung Phone 12 phù hợp cho nhu cầu phone, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Samsung",
+    "category": "phone",
+    "price": 27393012.0,
+    "stock": 2,
+    "image_url": "https://picsum.photos/id/12/300/300"
+  },
+  {
+    "id": 13,
+    "name": "Logitech Mouse 13",
+    "description": "Logitech Mouse 13 phù hợp cho nhu cầu mouse, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Logitech",
+    "category": "mouse",
+    "price": 26258915.0,
+    "stock": 18,
+    "image_url": "https://picsum.photos/id/13/300/300"
+  },
+  {
+    "id": 14,
+    "name": "Asus Phone 14",
+    "description": "Asus Phone 14 phù hợp cho nhu cầu phone, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Asus",
+    "category": "phone",
+    "price": 5065222.0,
+    "stock": 21,
+    "image_url": "https://picsum.photos/id/14/300/300"
+  },
+  {
+    "id": 15,
+    "name": "Asus Mouse 15",
+    "description": "Asus Mouse 15 phù hợp cho nhu cầu mouse, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Asus",
+    "category": "mouse",
+    "price": 7344748.0,
+    "stock": 27,
+    "image_url": "https://picsum.photos/id/15/300/300"
+  },
+  {
+    "id": 16,
+    "name": "Asus Phone 16",
+    "description": "Asus Phone 16 phù hợp cho nhu cầu phone, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Asus",
+    "category": "phone",
+    "price": 27499839.0,
+    "stock": 8,
+    "image_url": "https://picsum.photos/id/16/300/300"
+  },
+  {
+    "id": 17,
+    "name": "Samsung Headphone 17",
+    "description": "Samsung Headphone 17 phù hợp cho nhu cầu headphone, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Samsung",
+    "category": "headphone",
+    "price": 12905531.0,
+    "stock": 11,
+    "image_url": "https://picsum.photos/id/17/300/300"
+  },
+  {
+    "id": 18,
+    "name": "MSI Keyboard 18",
+    "description": "MSI Keyboard 18 phù hợp cho nhu cầu keyboard, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "MSI",
+    "category": "keyboard",
+    "price": 19906578.0,
+    "stock": 22,
+    "image_url": "https://picsum.photos/id/18/300/300"
+  },
+  {
+    "id": 19,
+    "name": "HP Monitor 19",
+    "description": "HP Monitor 19 phù hợp cho nhu cầu monitor, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "HP",
+    "category": "monitor",
+    "price": 37835520.0,
+    "stock": 23,
+    "image_url": "https://picsum.photos/id/19/300/300"
+  },
+  {
+    "id": 20,
+    "name": "Asus Monitor 20",
+    "description": "Asus Monitor 20 phù hợp cho nhu cầu monitor, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Asus",
+    "category": "monitor",
+    "price": 33011757.0,
+    "stock": 12,
+    "image_url": "https://picsum.photos/id/20/300/300"
+  },
+  {
+    "id": 21,
+    "name": "Acer Keyboard 21",
+    "description": "Acer Keyboard 21 phù hợp cho nhu cầu keyboard, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Acer",
+    "category": "keyboard",
+    "price": 23752245.0,
+    "stock": 26,
+    "image_url": "https://picsum.photos/id/21/300/300"
+  },
+  {
+    "id": 22,
+    "name": "Dell Keyboard 22",
+    "description": "Dell Keyboard 22 phù hợp cho nhu cầu keyboard, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Dell",
+    "category": "keyboard",
+    "price": 4144210.0,
+    "stock": 25,
+    "image_url": "https://picsum.photos/id/22/300/300"
+  },
+  {
+    "id": 23,
+    "name": "MSI Tablet 23",
+    "description": "MSI Tablet 23 phù hợp cho nhu cầu tablet, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "MSI",
+    "category": "tablet",
+    "price": 19957786.0,
+    "stock": 2,
+    "image_url": "https://picsum.photos/id/23/300/300"
+  },
+  {
+    "id": 24,
+    "name": "Asus Headphone 24",
+    "description": "Asus Headphone 24 phù hợp cho nhu cầu headphone, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Asus",
+    "category": "headphone",
+    "price": 16259125.0,
+    "stock": 20,
+    "image_url": "https://picsum.photos/id/24/300/300"
+  },
+  {
+    "id": 25,
+    "name": "Samsung Tablet 25",
+    "description": "Samsung Tablet 25 phù hợp cho nhu cầu tablet, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Samsung",
+    "category": "tablet",
+    "price": 32783026.0,
+    "stock": 4,
+    "image_url": "https://picsum.photos/id/25/300/300"
+  },
+  {
+    "id": 26,
+    "name": "Acer Monitor 26",
+    "description": "Acer Monitor 26 phù hợp cho nhu cầu monitor, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Acer",
+    "category": "monitor",
+    "price": 18540891.0,
+    "stock": 23,
+    "image_url": "https://picsum.photos/id/26/300/300"
+  },
+  {
+    "id": 27,
+    "name": "Logitech Mouse 27",
+    "description": "Logitech Mouse 27 phù hợp cho nhu cầu mouse, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Logitech",
+    "category": "mouse",
+    "price": 30741707.0,
+    "stock": 28,
+    "image_url": "https://picsum.photos/id/27/300/300"
+  },
+  {
+    "id": 28,
+    "name": "Sony Tablet 28",
+    "description": "Sony Tablet 28 phù hợp cho nhu cầu tablet, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Sony",
+    "category": "tablet",
+    "price": 26283170.0,
+    "stock": 7,
+    "image_url": "https://picsum.photos/id/28/300/300"
+  },
+  {
+    "id": 29,
+    "name": "Lenovo Camera 29",
+    "description": "Lenovo Camera 29 phù hợp cho nhu cầu camera, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Lenovo",
+    "category": "camera",
+    "price": 8090827.0,
+    "stock": 24,
+    "image_url": "https://picsum.photos/id/29/300/300"
+  },
+  {
+    "id": 30,
+    "name": "Dell Phone 30",
+    "description": "Dell Phone 30 phù hợp cho nhu cầu phone, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Dell",
+    "category": "phone",
+    "price": 12247007.0,
+    "stock": 20,
+    "image_url": "https://picsum.photos/id/30/300/300"
+  },
+  {
+    "id": 31,
+    "name": "Lenovo Tablet 31",
+    "description": "Lenovo Tablet 31 phù hợp cho nhu cầu tablet, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Lenovo",
+    "category": "tablet",
+    "price": 6253272.0,
+    "stock": 12,
+    "image_url": "https://picsum.photos/id/31/300/300"
+  },
+  {
+    "id": 32,
+    "name": "Apple Camera 32",
+    "description": "Apple Camera 32 phù hợp cho nhu cầu camera, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Apple",
+    "category": "camera",
+    "price": 37498262.0,
+    "stock": 8,
+    "image_url": "https://picsum.photos/id/32/300/300"
+  },
+  {
+    "id": 33,
+    "name": "Logitech Laptop 33",
+    "description": "Logitech Laptop 33 phù hợp cho nhu cầu laptop, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Logitech",
+    "category": "laptop",
+    "price": 9677437.0,
+    "stock": 21,
+    "image_url": "https://picsum.photos/id/33/300/300"
+  },
+  {
+    "id": 34,
+    "name": "Logitech Mouse 34",
+    "description": "Logitech Mouse 34 phù hợp cho nhu cầu mouse, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Logitech",
+    "category": "mouse",
+    "price": 24818789.0,
+    "stock": 3,
+    "image_url": "https://picsum.photos/id/34/300/300"
+  },
+  {
+    "id": 35,
+    "name": "Acer Tablet 35",
+    "description": "Acer Tablet 35 phù hợp cho nhu cầu tablet, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Acer",
+    "category": "tablet",
+    "price": 12603787.0,
+    "stock": 14,
+    "image_url": "https://picsum.photos/id/35/300/300"
+  },
+  {
+    "id": 36,
+    "name": "Dell Mouse 36",
+    "description": "Dell Mouse 36 phù hợp cho nhu cầu mouse, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Dell",
+    "category": "mouse",
+    "price": 35583765.0,
+    "stock": 24,
+    "image_url": "https://picsum.photos/id/36/300/300"
+  },
+  {
+    "id": 37,
+    "name": "Lenovo Phone 37",
+    "description": "Lenovo Phone 37 phù hợp cho nhu cầu phone, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Lenovo",
+    "category": "phone",
+    "price": 22018290.0,
+    "stock": 26,
+    "image_url": "https://picsum.photos/id/37/300/300"
+  },
+  {
+    "id": 38,
+    "name": "Logitech Keyboard 38",
+    "description": "Logitech Keyboard 38 phù hợp cho nhu cầu keyboard, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Logitech",
+    "category": "keyboard",
+    "price": 12246869.0,
+    "stock": 11,
+    "image_url": "https://picsum.photos/id/38/300/300"
+  },
+  {
+    "id": 39,
+    "name": "Lenovo Laptop 39",
+    "description": "Lenovo Laptop 39 phù hợp cho nhu cầu laptop, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Lenovo",
+    "category": "laptop",
+    "price": 23743744.0,
+    "stock": 15,
+    "image_url": "https://picsum.photos/id/39/300/300"
+  },
+  {
+    "id": 40,
+    "name": "Dell Phone 40",
+    "description": "Dell Phone 40 phù hợp cho nhu cầu phone, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Dell",
+    "category": "phone",
+    "price": 26349226.0,
+    "stock": 28,
+    "image_url": "https://picsum.photos/id/40/300/300"
+  },
+  {
+    "id": 41,
+    "name": "Acer Keyboard 41",
+    "description": "Acer Keyboard 41 phù hợp cho nhu cầu keyboard, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Acer",
+    "category": "keyboard",
+    "price": 5877292.0,
+    "stock": 7,
+    "image_url": "https://picsum.photos/id/41/300/300"
+  },
+  {
+    "id": 42,
+    "name": "Sony Phone 42",
+    "description": "Sony Phone 42 phù hợp cho nhu cầu phone, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Sony",
+    "category": "phone",
+    "price": 7738105.0,
+    "stock": 23,
+    "image_url": "https://picsum.photos/id/42/300/300"
+  },
+  {
+    "id": 43,
+    "name": "Samsung Phone 43",
+    "description": "Samsung Phone 43 phù hợp cho nhu cầu phone, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Samsung",
+    "category": "phone",
+    "price": 37739305.0,
+    "stock": 24,
+    "image_url": "https://picsum.photos/id/43/300/300"
+  },
+  {
+    "id": 44,
+    "name": "Lenovo Monitor 44",
+    "description": "Lenovo Monitor 44 phù hợp cho nhu cầu monitor, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Lenovo",
+    "category": "monitor",
+    "price": 33885660.0,
+    "stock": 30,
+    "image_url": "https://picsum.photos/id/44/300/300"
+  },
+  {
+    "id": 45,
+    "name": "Logitech Monitor 45",
+    "description": "Logitech Monitor 45 phù hợp cho nhu cầu monitor, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Logitech",
+    "category": "monitor",
+    "price": 19777649.0,
+    "stock": 16,
+    "image_url": "https://picsum.photos/id/45/300/300"
+  },
+  {
+    "id": 46,
+    "name": "Sony Tablet 46",
+    "description": "Sony Tablet 46 phù hợp cho nhu cầu tablet, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Sony",
+    "category": "tablet",
+    "price": 16203536.0,
+    "stock": 29,
+    "image_url": "https://picsum.photos/id/46/300/300"
+  },
+  {
+    "id": 47,
+    "name": "Logitech Keyboard 47",
+    "description": "Logitech Keyboard 47 phù hợp cho nhu cầu keyboard, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "Logitech",
+    "category": "keyboard",
+    "price": 22908926.0,
+    "stock": 12,
+    "image_url": "https://picsum.photos/id/47/300/300"
+  },
+  {
+    "id": 48,
+    "name": "MSI Camera 48",
+    "description": "MSI Camera 48 phù hợp cho nhu cầu camera, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "MSI",
+    "category": "camera",
+    "price": 36723926.0,
+    "stock": 14,
+    "image_url": "https://picsum.photos/id/48/300/300"
+  },
+  {
+    "id": 49,
+    "name": "HP Keyboard 49",
+    "description": "HP Keyboard 49 phù hợp cho nhu cầu keyboard, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "HP",
+    "category": "keyboard",
+    "price": 17069183.0,
+    "stock": 2,
+    "image_url": "https://picsum.photos/id/49/300/300"
+  },
+  {
+    "id": 50,
+    "name": "MSI Laptop 50",
+    "description": "MSI Laptop 50 phù hợp cho nhu cầu laptop, hiệu năng ổn định, pin tốt, thiết kế hiện đại, bảo hành chính hãng 12 tháng.",
+    "brand": "MSI",
+    "category": "laptop",
+    "price": 39163044.0,
+    "stock": 7,
+    "image_url": "https://picsum.photos/id/50/300/300"
+  }
+]
