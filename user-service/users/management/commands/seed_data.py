@@ -43,18 +43,24 @@ class Command(BaseCommand):
 
         created = 0
         for data in seed_users:
+            defaults = {
+                "email": data["email"],
+                "role": data["role"],
+                "is_staff": data["is_staff"],
+                "is_superuser": data["is_superuser"],
+            }
             user, is_created = User.objects.get_or_create(
                 username=data["username"],
-                defaults={
-                    "email": data["email"],
-                    "role": data["role"],
-                    "is_staff": data["is_staff"],
-                    "is_superuser": data["is_superuser"],
-                },
+                defaults=defaults,
             )
+
+            for field, value in defaults.items():
+                setattr(user, field, value)
+
+            user.set_password("Password123")
+            user.save()
+
             if is_created:
-                user.set_password("Password123")
-                user.save()
                 created += 1
 
         alice = User.objects.filter(username="alice").first()

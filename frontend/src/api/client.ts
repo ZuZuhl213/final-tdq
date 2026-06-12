@@ -8,7 +8,7 @@ import useAuthStore from "@/stores/authStore";
 import useToastStore from "@/stores/toastStore";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:18080";
+  import.meta.env.VITE_API_BASE_URL || "";
 
 const client: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
