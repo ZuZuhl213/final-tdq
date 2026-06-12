@@ -13,11 +13,20 @@ __pycache__/
 htmlcov/
 .venv/
 venv/
+.venv_doc/
+
+# Jupyter
+.ipynb_checkpoints/
+*.executed.ipynb
+
+# AI / local artifacts
+ai-service/data/artifacts/
+ai-service/data/user_behavior_synthetic.csv
 
 # Django
 *.log
 staticfiles/
-media/sửa lại file report cho chuẩn mark down đi từ 2.3.2 t thấy bị lõi
+media/
 
 # Node / Frontend
 node_modules/

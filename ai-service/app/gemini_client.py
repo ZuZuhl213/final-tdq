@@ -13,127 +13,137 @@ logger = logging.getLogger("ai-service")
 
 
 class GeminiClient:
-    """Groq client for LLM requests (using Mixtral-8x7b or other models)."""
-    
+    """LLM client that supports Gemini first, then Groq."""
+
     def __init__(self) -> None:
-        api_key = os.getenv("GROQ_API_KEY", "")
-        if not api_key:
-            raise RuntimeError("Missing GROQ_API_KEY")
-        
-        self.api_key = api_key
-        self.base_url = "https://api.groq.com/openai/v1"
-        self.model = "llama-3.1-8b-instant"  # Free model on Groq
+        self.gemini_api_key = os.getenv("GEMINI_API_KEY", "").strip()
+        self.groq_api_key = os.getenv("GROQ_API_KEY", "").strip()
         self.timeout_seconds = 30
         self.max_retries = 2
-        
-        logger.info("Groq client initialized with model: %s", self.model)
+        self.provider = ""
+        self.model = ""
+        self.gemini_models: list[str] = []
 
-    def chat_with_rag(self, query: str, products: list[dict], policy: str) -> ChatResponse:
-        """Call OpenRouter API with RAG context, retry on failure, validate response."""
+        if self.gemini_api_key:
+            self.provider = "gemini"
+            self.model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+            self.gemini_models = [
+                self.model,
+                f"models/{self.model}" if not self.model.startswith("models/") else self.model.removeprefix("models/"),
+                "gemini-1.5-flash-latest",
+                "models/gemini-1.5-flash-latest",
+                "gemini-1.5-pro-latest",
+                "models/gemini-1.5-pro-latest",
+            ]
+        elif self.groq_api_key:
+            self.provider = "groq"
+            self.model = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+            self.base_url = "https://api.groq.com/openai/v1"
+        else:
+            raise RuntimeError("Missing GEMINI_API_KEY or GROQ_API_KEY")
+
+        logger.info("LLM client initialized with provider=%s model=%s", self.provider, self.model)
+
+    def _build_prompt(self, query: str, products: list[dict], policy: str) -> str:
         compact_products = [
             {
                 "id": p["id"],
                 "name": p["name"],
+                "category": p.get("category"),
+                "brand": p.get("brand"),
                 "price": float(p["price"]),
                 "stock": int(p["stock"]),
             }
             for p in products
         ]
-        prompt = (
-            "Ban la tro ly ban hang cua TechStore. Hay tra loi bang JSON, khong giai thich them.\n"
-            "Du lieu shop (chi dung thong tin nay):\n"
-            f"- San pham lien quan: {json.dumps(compact_products, ensure_ascii=False)}\n"
-            f"- Chinh sach: {policy}\n"
-            f"Cau hoi: {query}\n"
-            "Tra ve JSON chinh xac:\n"
+        return (
+            "Ban la tro ly ban hang cua TechStore. "
+            "Chi duoc dua tren du lieu duoc cung cap va phai tra loi bang JSON hop le.\n"
+            f"San pham lien quan: {json.dumps(compact_products, ensure_ascii=False)}\n"
+            f"Chinh sach cua cua hang: {policy}\n"
+            f"Cau hoi cua khach: {query}\n"
+            "Tra ve dung schema sau:\n"
             "{\n"
-            '  "answer": "cau tra loi tu nhien, ngan gon, tu van dua tren du lieu shop",\n'
-            '  "suggested_products": [{"id": 1, "name": "ten san pham", "price": 100000.0}]\n'
+            '  "answer": "cau tra loi ngan gon, huu ich, bang tieng Viet",\n'
+            '  "suggested_products": [{"id": 1, "name": "ten", "price": 1000000.0}]\n'
             "}\n"
-            "Luu y: Chi goi y san pham co stock > 0. Khong bia gia, khong bia san pham."
+            "Chi dua ra san pham con hang, khong bịa thong tin ngoai du lieu."
         )
 
+    def _parse_json_payload(self, raw_text: str) -> ChatResponse:
+        text = raw_text.strip()
+        if text.startswith("```"):
+            start = text.find("{")
+            end = text.rfind("}") + 1
+            if start >= 0 and end > start:
+                text = text[start:end]
+        payload_json: Any = json.loads(text)
+        return ChatResponse(**payload_json)
+
+    def _chat_with_groq(self, prompt: str) -> ChatResponse:
+        headers = {
+            "Authorization": f"Bearer {self.groq_api_key}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": self.model,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.3,
+            "max_tokens": 800,
+            "top_p": 0.95,
+        }
         for attempt in range(self.max_retries + 1):
             try:
-                logger.info("Calling Groq API (attempt %d/%d)", attempt + 1, self.max_retries + 1)
-                
-                headers = {
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json",
-                }
-                
-                payload = {
-                    "model": self.model,
-                    "messages": [
-                        {
-                            "role": "user",
-                            "content": prompt,
-                        }
-                    ],
-                    "temperature": 0.3,
-                    "max_tokens": 1000,
-                    "top_p": 0.95,
-                }
-                
                 response = requests.post(
                     f"{self.base_url}/chat/completions",
                     headers=headers,
                     json=payload,
                     timeout=self.timeout_seconds,
                 )
-                
-                try:
-                    response.raise_for_status()
-                except requests.exceptions.HTTPError as exc:
-                    logger.error("Groq API error on attempt %d: Status=%s | Body: %s", attempt + 1, response.status_code, response.text)
-                    if attempt < self.max_retries:
-                        continue
-                    raise ValueError(f"Groq API error: {exc}") from exc
-                
+                response.raise_for_status()
                 result = response.json()
-                
-                # Extract text from Groq response
-                if "choices" not in result or not result["choices"]:
-                    raise ValueError("No choices in Groq response")
-                
                 text = result["choices"][0]["message"]["content"].strip()
-                logger.info("Groq response: %s", text[:200])
-                
-                # Extract JSON from code blocks if wrapped
-                if text.startswith("```"):
-                    # Extract from code blocks (```json ... ```)
-                    start = text.find("{")
-                    end = text.rfind("}") + 1
-                    if start >= 0 and end > start:
-                        text = text[start:end]
-                        logger.info("Extracted JSON from code blocks")
-                
-                logger.debug("Attempting to parse: %s", text[:100])
-                payload_json: Any = json.loads(text)
-                validated = ChatResponse(**payload_json)
-                logger.info("Groq response validated successfully")
-                return validated
-                
-            except json.JSONDecodeError as exc:
-                logger.error("JSON parse error on attempt %d: %s", attempt + 1, exc)
-                if attempt < self.max_retries:
-                    continue
-                raise ValueError(f"Invalid JSON from Groq: {exc}") from exc
-                
-            except requests.exceptions.Timeout:
-                logger.warning("Groq request timeout on attempt %d", attempt + 1)
-                if attempt < self.max_retries:
-                    continue
-                raise TimeoutError(f"Groq API timeout after {self.timeout_seconds}s")
-                
-            except requests.exceptions.RequestException as exc:
-                response_text = ""
-                if hasattr(exc, 'response') and exc.response is not None:
-                    response_text = exc.response.text
-                logger.error("Groq API error on attempt %d: %s | Response: %s", attempt + 1, exc, response_text)
-                if attempt < self.max_retries:
-                    continue
-                raise ValueError(f"Groq API error: {exc}") from exc
-        
-        # Should not reach here
-        raise ValueError("Failed to get valid response from Groq after all retries")
+                return self._parse_json_payload(text)
+            except Exception as exc:
+                logger.warning("Groq call failed on attempt %d: %s", attempt + 1, exc)
+                if attempt >= self.max_retries:
+                    raise
+        raise ValueError("Groq call failed")
+
+    def _chat_with_gemini(self, prompt: str) -> ChatResponse:
+        import google.generativeai as genai
+
+        genai.configure(api_key=self.gemini_api_key)
+        generation_config = {
+            "temperature": 0.3,
+            "response_mime_type": "application/json",
+        }
+        candidate_models = list(dict.fromkeys([model_name for model_name in self.gemini_models if model_name]))
+        last_error: Exception | None = None
+        for model_name in candidate_models:
+            model = genai.GenerativeModel(model_name)
+            for attempt in range(self.max_retries + 1):
+                try:
+                    response = model.generate_content(prompt, generation_config=generation_config)
+                    text = response.text or ""
+                    self.model = model_name
+                    return self._parse_json_payload(text)
+                except Exception as exc:
+                    last_error = exc
+                    logger.warning(
+                        "Gemini call failed with model=%s attempt=%d: %s",
+                        model_name,
+                        attempt + 1,
+                        exc,
+                    )
+                    if attempt >= self.max_retries:
+                        break
+        if last_error is not None:
+            raise last_error
+        raise ValueError("Gemini call failed")
+
+    def chat_with_rag(self, query: str, products: list[dict], policy: str) -> ChatResponse:
+        prompt = self._build_prompt(query, products, policy)
+        if self.provider == "gemini":
+            return self._chat_with_gemini(prompt)
+        return self._chat_with_groq(prompt)

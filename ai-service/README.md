@@ -1,127 +1,109 @@
 # TechStore AI Service
 
-FastAPI service for product recommendation and RAG chatbot using FAISS + Gemini API.
+FastAPI microservice for hybrid recommendation and product chatbot.
 
-## Architecture
+## What Is Implemented
 
-- **FastAPI** backend with async support
-- **FAISS** (Facebook AI Similarity Search) for vector-based product retrieval
-- **Sentence-Transformers** (all-MiniLM-L6-v2) for embeddings
-- **Gemini 1.5 Flash** for conversational AI
-- Auto-seeding: 50 products, 5000 user behavior rows, shop policy
+- FastAPI service with 2 required endpoints:
+  - `GET /recommend?user_id=1`
+  - `POST /chatbot`
+- Alias endpoints for gateway compatibility:
+  - `GET /api/ai/recommend`
+  - `POST /api/ai/chat/`
+- Sequence recommendation with `window_size=5` on user behavior time series.
+- Three trained sequence models in PyTorch:
+  - `RNN` (`nn.RNN`, equivalent to SimpleRNN-style sequence model)
+  - `LSTM`
+  - `biLSTM` (`nn.LSTM(..., bidirectional=True)`)
+- Hybrid score:
 
-## Features
-
-### Endpoints
-
-- `GET /health` → `{ "status": "ok", "index_loaded": true }`
-- `GET /api/ai/recommend?user_id=1&limit=5&product_id=10` → Recommend based on popularity + co-occurrence
-- `POST /api/ai/chat/` → RAG chatbot with Gemini
-
-### Request/Response
-
-```bash
-# Chat endpoint
-POST /api/ai/chat/
-{
-  "query": "toi can laptop gaming duoi 15 trieu",
-  "user_id": 1
-}
-
-# Response
-{
-  "answer": "Mình đã lọc nhanh các mẫu laptop gaming trong tầm giá...",
-  "suggested_products": [
-    {"id": 5, "name": "Dell Laptop 5", "price": 14990000},
-    ...
-  ]
-}
+```text
+final_score = w1 * rnn + w2 * lstm + w3 * bilstm + w4 * graph + w5 * rag
 ```
 
-## Data Seeding
+- Knowledge-graph signal:
+  - Runtime support for Neo4j via `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD`
+  - In-memory graph fallback when Neo4j is not configured
+- RAG retrieval using `TF-IDF embedding + FAISS`
+- LLM integration:
+  - Gemini if `GEMINI_API_KEY` is available
+  - Groq if `GROQ_API_KEY` is available
+  - Fallback response if external LLM call fails
 
-Auto-generate on first startup (if missing):
-- `data/products.json` - 50 tech products with name, description, price, stock
-- `data/user_behavior.csv` - 5000 rows of user actions (view, click, add_to_cart, purchase)
-- `data/policy.txt` - Shop policies (refund, shipping, warranty)
+## Data Contract
 
-## Error Handling & Fallback
+Behavior file: `data/user_behavior.csv`
 
-- **Gemini unavailable**: Fallback to rule-based response + top 3 popular products
-- **Invalid JSON**: Retry up to 2 times, then fallback
-- **Timeout**: 15-second timeout per Gemini request with retry logic
-- **Empty stock**: Filter out out-of-stock products from recommendations
+- `user_id`
+- `product_id`
+- `action`
+- `timestamp`
 
-## Run Local
+Actions are normalized to `view`, `click`, `add_to_cart`.
+
+## Key Files
+
+- `app/main.py`: FastAPI app and API endpoints
+- `app/recommendation.py`: sequence training, hybrid scoring, graph logic
+- `app/rag_retrieve.py`: FAISS index and retrieval scoring
+- `app/gemini_client.py`: Gemini/Groq LLM client
+- `tests/test_api.py`: API smoke tests with `TestClient`
+
+## Setup
 
 ```bash
 cd ai-service
-
-# Setup
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-
-# Set Gemini API key
-export GEMINI_API_KEY="your-key-here"
-
-# Run
-uvicorn app.main:app --host 0.0.0.0 --port 5000 --reload
-
-# Test
-curl http://localhost:5000/health
-curl -X POST http://localhost:5000/api/ai/chat/ \
-  -H "Content-Type: application/json" \
-  -d '{"query":"laptop dui 15 trieu","user_id":1}'
 ```
 
-## Run Docker
+Optional environment variables:
 
 ```bash
-# Build
-docker build -t techstore-ai-service ./ai-service
+export GEMINI_API_KEY="..."
+export GEMINI_MODEL="gemini-1.5-flash"
 
-# Run
-docker run --rm \
-  -p 5000:5000 \
-  --env GEMINI_API_KEY="your-key" \
-  techstore-ai-service
+export GROQ_API_KEY="..."
+export GROQ_MODEL="llama-3.1-8b-instant"
 
-# Or with .env file
-docker run --rm \
-  -p 5000:5000 \
-  --env-file ./ai-service/.env \
-  techstore-ai-service
+export NEO4J_URI="bolt://localhost:7687"
+export NEO4J_USER="neo4j"
+export NEO4J_PASSWORD="your-password"
+
+export HYBRID_WEIGHTS="0.2,0.25,0.25,0.15,0.15"
+export SEQUENCE_EPOCHS="4"
 ```
 
-## Configuration
+## Run
 
-Create `.env` file (copy from `.env.example`):
-
-```
-GEMINI_API_KEY=your_gemini_api_key_here
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port 5000 --reload
 ```
 
-## Logging
+## Quick Test
 
-All requests/responses logged to console at INFO level:
+```bash
+pytest tests/test_api.py
+
+curl "http://127.0.0.1:5000/recommend?user_id=1&limit=5"
+
+curl -X POST "http://127.0.0.1:5000/chatbot" \
+  -H "Content-Type: application/json" \
+  -d '{"query":"toi can laptop hoc tap","user_id":1}'
 ```
-2026-05-12 10:30:45,123 INFO Chat query: toi can laptop (user_id=1)
-2026-05-12 10:30:50,456 INFO Chat success: returned 3 products
-```
 
-## Performance Notes
+## Verified Locally
 
-- **Embedding**: ~500-1000ms on CPU (first time, then cached)
-- **RAG retrieval**: ~10-50ms (FAISS in-memory)
-- **Gemini call**: ~3-8 seconds (network latency)
-- **Total chat latency**: ~5-10 seconds typically
+- `pytest tests/test_api.py` passed.
+- Live HTTP smoke test on `/recommend` and `/chatbot` passed.
+- Sequence models were trained and cached into `data/artifacts/`.
+- In the current local environment:
+  - graph backend ran in `in_memory` mode because Neo4j was not configured
+  - chatbot returned valid fallback output because the available Gemini configuration responded with model-not-found
 
-## Future Improvements
+## Notes
 
-- [ ] Redis caching for popular queries
-- [ ] Async Gemini API calls
-- [ ] Batch processing for multiple users
-- [ ] Custom embedding model fine-tuned on shop data
-- [ ] A/B testing different prompt templates
-- [ ] Metrics tracking (latency, success rate, user feedback)
+- Recommendation works without external services.
+- Neo4j support is implemented, but requires a running Neo4j instance to activate.
+- Chatbot always responds, but rich LLM generation depends on a valid Gemini or Groq setup.

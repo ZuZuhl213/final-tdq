@@ -45,8 +45,8 @@ def _generate_products(n: int = 50) -> list[dict]:
 
 def _generate_behavior(products: list[dict], rows: int = 5000) -> list[list]:
     random.seed(99)
-    actions = ["view", "click", "add_to_cart", "purchase"]
-    weights = [0.60, 0.20, 0.15, 0.05]
+    actions = ["view", "click", "add_to_cart"]
+    weights = [0.62, 0.23, 0.15]
     now = datetime.utcnow()
 
     data: list[list] = []

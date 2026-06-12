@@ -41,58 +41,78 @@ def startup_event() -> None:
     global retriever, recommender, gemini_client
     ensure_seed_data()
     retriever = RagRetriever()
-    recommender = Recommender()
-    # Do not block startup on embedding/model loading.
     retriever.ensure_index()
+    recommender = Recommender(retriever=retriever)
     try:
         gemini_client = GeminiClient()
-        logger.info("Gemini client initialized")
+        logger.info("LLM client initialized")
     except Exception as exc:
         gemini_client = None
-        logger.error("Gemini init failed: %s", exc)
+        logger.warning("LLM client unavailable, fallback mode enabled: %s", exc)
+
+
+@app.on_event("shutdown")
+def shutdown_event() -> None:
+    if recommender is not None:
+        recommender.close()
 
 
 @app.get("/health")
 @app.get("/api/ai/health/")
 def health() -> dict:
-    return {"status": "ok", "index_loaded": bool(retriever and retriever.index_loaded)}
+    return {
+        "status": "ok",
+        "index_loaded": bool(retriever and retriever.index_loaded),
+        "models_loaded": list(recommender.trained_models) if recommender else [],
+        "graph_backend": "neo4j" if recommender and recommender.graph_signal.neo4j_enabled else "in_memory",
+        "llm_provider": gemini_client.provider if gemini_client else "fallback",
+    }
 
 
+@app.get("/recommend")
 @app.get("/api/ai/recommend")
 @app.get("/api/ai/recommend/")
-def recommend(user_id: int = 1, limit: int = 5, product_id: int | None = None):
-    del user_id
+def recommend(user_id: int = 1, limit: int = 5, query: str | None = None):
     if recommender is None:
         raise HTTPException(status_code=503, detail="Recommender not initialized")
-    items = recommender.recommend(limit=limit, product_id=product_id)
-    return {"items": items, "products": items}
+    return recommender.recommend(user_id=user_id, limit=limit, query=query)
 
 
+@app.post("/chatbot")
 @app.post("/api/ai/chat/")
 def chat(payload: ChatRequest):
-    """Chat endpoint with RAG + Gemini, fallback to popular products."""
+    """Chat endpoint with hybrid recommendation + RAG + LLM/fallback."""
     if retriever is None or recommender is None:
         logger.error("Chat called but service not initialized")
         raise HTTPException(status_code=503, detail="Service not initialized")
 
     try:
         logger.info("Chat query: %s (user_id=%s)", payload.query[:50], payload.user_id)
-        
-        # Retrieve relevant products using RAG
+
+        recommendation = recommender.recommend(user_id=payload.user_id or 1, limit=5, query=payload.query)
         products = retriever.retrieve_products(payload.query, top_k=5)
+        hybrid_products = [
+            {
+                "id": item["id"],
+                "name": item["name"],
+                "price": item["price"],
+                "stock": int(recommender.product_lookup[item["id"]]["stock"]),
+                "category": recommender.product_lookup[item["id"]]["category"],
+                "brand": recommender.product_lookup[item["id"]]["brand"],
+            }
+            for item in recommendation["items"]
+        ]
+        hybrid_ids = {int(product["id"]) for product in hybrid_products}
+        merged_products = hybrid_products + [product for product in products if int(product["id"]) not in hybrid_ids]
         policy = (DATA_DIR / "policy.txt").read_text(encoding="utf-8")
         product_map = {p["id"]: p for p in json.loads(PRODUCTS_FILE.read_text(encoding="utf-8"))}
 
-        # Use Gemini if available, fallback otherwise
         if gemini_client is None:
-            logger.warning("Gemini client unavailable, using fallback")
-            popular = recommender.recommend(limit=3)
-            return build_fallback_response(popular)
+            logger.warning("LLM client unavailable, using fallback")
+            return build_fallback_response(recommendation["items"], query=payload.query)
 
-        # Call Gemini with timeout
-        output = gemini_client.chat_with_rag(payload.query, products, policy)
+        output = gemini_client.chat_with_rag(payload.query, merged_products[:5], policy)
 
-        # Validate & filter products (only in-stock)
         filtered = []
         for p in output.suggested_products:
             if p.id in product_map and int(product_map[p.id].get("stock", 0)) > 0:
@@ -105,22 +125,34 @@ def chat(payload: ChatRequest):
                 )
 
         if not output.answer.strip():
-            raise ValueError("Empty answer from Gemini")
+            raise ValueError("Empty answer from LLM")
 
         logger.info("Chat success: returned %d products", len(filtered))
         products = filtered[:5]
-        return {"answer": output.answer, "suggested_products": products, "products": products}
-        
+        if not products:
+            products = [
+                {"id": item["id"], "name": item["name"], "price": item["price"]}
+                for item in recommendation["items"][:5]
+            ]
+        return {
+            "answer": output.answer,
+            "suggested_products": products,
+            "products": products,
+            "provider": gemini_client.provider,
+            "recommendation": recommendation,
+        }
+
     except Exception as exc:
         logger.error("Chat failed, using fallback: %s", exc, exc_info=True)
         try:
-            popular = recommender.recommend(limit=3)
-            return build_fallback_response(popular)
+            fallback = recommender.recommend(user_id=payload.user_id or 1, limit=3, query=payload.query)
+            response = build_fallback_response(fallback["items"], query=payload.query)
+            response["recommendation"] = fallback
+            return response
         except Exception as fallback_exc:
             logger.error("Fallback also failed: %s", fallback_exc)
             return {
                 "answer": "Xin lỗi, dịch vụ tạm thời không khả dụng. Vui lòng thử lại sau.",
-                "suggested_products": []
+                "suggested_products": [],
+                "provider": "fallback",
             }
-        popular = recommender.recommend(limit=3)
-        return build_fallback_response(popular)
